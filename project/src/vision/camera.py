@@ -56,15 +56,17 @@ cap = cv2.VideoCapture(-1)
 
 def get_red_mask(hsv_img):
     # note that is in [0-180] and s, v in [0, 255] 
-    mask1 = cv2.inRange(hsv_img, (0, 90, 75), (2.5, 255, 255))
-    mask2 = cv2.inRange(hsv_img, (175, 90, 75), (180, 255, 255))
+    mask1 = cv2.inRange(hsv_img, (0, 80, 40), (2, 255, 255))
+    mask2 = cv2.inRange(hsv_img, (170, 80, 40), (180, 255, 255))
     return mask1 + mask2 # and
 
 def noise_down(mask):
+    kernel1 = np.ones((4,4),np.uint8)
+    kernel2 = np.ones((6,6),np.uint8)
     # opposite to erode. Fill red space
-    res = cv2.dilate(mask, None, iterations=3)
+    res = cv2.dilate(mask, kernel1, iterations=2)
     # if one pix is black center is black
-    res = cv2.erode(res, None, iterations=2) 
+    res = cv2.erode(res, kernel1, iterations=1) 
     return res
 
 def white_balance(img):
@@ -86,30 +88,21 @@ while(True):
     
     mask = get_red_mask(hsv)
     mask = noise_down(mask)
-    cv2.imshow('mask', mask) 
     result = cv2.bitwise_and(frame, frame, mask=mask)
-    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if len(contours) != 0:
-        cv2.drawContours(frame, contours, -1, (0, 255, 0), 3)
         maxContour = max(contours, key = cv2.contourArea)
-        cv2.drawContours(frame, [maxContour], -1,  (0, 0, 255), 3)
-    cv2.imshow('in',frame)
-    cv2.imshow('res', result)
-#crop
-    #(x, y) = np.where(mask == 255)
-    if len(contours) >= 1:
-        x, y, w, h = cv2.boundingRect(contours[0])
-        if w > 1 and h > 1:
+        x, y, w, h = cv2.boundingRect(maxContour)
+        if w > 50 and h > 50:
             topx = x+w
             topy = y+h
-            cropped = frame[x:topx+1, y:topy+1]# cv2.rect (0, 255, 0, -1))
-            #cv2.imshow('crop', cropped)        
-   # if len(x) != 0 and len(y) !=0 :
-   #    (topx, topy) = (np.min(x), np.min(y))
-   #     (botx, boty) = (np.max(x), np.max(y))
-   #     cropped = frame[topx:botx+1, topy:boty+1]
-   #     cv2.imshow('crop', cropped)
-
+            cropped = frame[y:topy, x:topx]
+            cv2.imshow('crop', cropped)        
+        cv2.drawContours(frame, contours, -1, (0, 255, 0), 1)
+        cv2.drawContours(frame, [maxContour], -1,  (255, 0, 0), 2)
+        cv2.rectangle(frame, (x,y), (x+w, y+h), (255, 128, 0), 2)
+    cv2.imshow('in',frame)
+    cv2.imshow('res', result)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
