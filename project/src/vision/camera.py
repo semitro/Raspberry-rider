@@ -6,6 +6,7 @@ import logging
 
 cap = cv2.VideoCapture(-1)
 
+# get red areas
 def get_red_mask(hsv_img):
     # note that is in [0-180] and s, v in [0, 255] 
     mask1 = cv2.inRange(hsv_img, (0, 80, 40), (2, 255, 255))
@@ -30,7 +31,6 @@ def white_balance(img):
     result = cv2.cvtColor(result, cv2.COLOR_LAB2BGR)
     return result
 
-
 # frame may be passed only for painting contours
 def find_interesting_bound(mask, frame):
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -43,14 +43,17 @@ def find_interesting_bound(mask, frame):
     else:
         return 0, 0, 0, 0
 
-def crop_img(img, x, y, w, h):
+def crop(img, x, y, w, h):
     if w > 50 and h > 50:
         topx = x+w
         topy = y+h
         cropped = frame[y:topy, x:topx]
-        cv2.imshow('crop', cropped)
+        cropped = cv2.resize(cropped, (128, 128))
         return cropped
+    else:
+        return None
 
+#### main loop
 while(True):
     ret, frame = cap.read()
     frame = white_balance(frame)
@@ -64,16 +67,18 @@ while(True):
     result = cv2.bitwise_and(frame, frame, mask=mask)
 
     x, y, w, h = find_interesting_bound(mask, frame)
-    cropped_img = crop_img(frame, x, y, w, h)
+    cropped = crop(frame, x, y, w, h)
+    if not cropped is None:
+        cropped = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
+        cv2.imshow('crop', cropped)
 
     cv2.rectangle(frame, (x,y), (x+w, y+h), (255, 128, 0), 2)
-    cv2.imshow('in',frame)
     cv2.imshow('res', result)
+    cv2.imshow('in', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 cap.release()
 cv2.destroyAllWindows()
-
 
