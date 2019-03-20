@@ -4,54 +4,6 @@ import sys
 import numpy as np
 import logging 
 
-def apply_mask(matrix, mask, fill_value):
-    masked = np.ma.array(matrix, mask=mask, fill_value=fill_value)
-    return masked.filled()
-
-def apply_threshold(matrix, low_value, high_value):
-    low_mask = matrix < low_value
-    matrix = apply_mask(matrix, low_mask, low_value)
-
-    high_mask = matrix > high_value
-    matrix = apply_mask(matrix, high_mask, high_value)
-
-    return matrix
-
-def simplest_cb(img, percent):
-    assert img.shape[2] == 3
-    assert percent > 0 and percent < 100
-
-    half_percent = percent / 200.0
-
-    channels = cv2.split(img)
-
-    out_channels = []
-    for channel in channels:
-        assert len(channel.shape) == 2
-        # find the low and high precentile values (based on the input percentile)
-        height, width = channel.shape
-        vec_size = width * height
-        flat = channel.reshape(vec_size)
-
-        assert len(flat.shape) == 1
-
-        flat = np.sort(flat)
-
-        n_cols = flat.shape[0]
-
-        low_val  = flat[int(math.floor(n_cols * half_percent))]
-        high_val = flat[int(math.ceil( n_cols * (1.0 - half_percent)))]
-
-
-        # saturate below the low percentile and above the high percentile
-        thresholded = apply_threshold(channel, low_val, high_val)
-        # scale the channel
-        normalized = cv2.normalize(thresholded, thresholded.copy(), 0, 255, cv2.NORM_MINMAX)
-        out_channels.append(normalized)
-
-    return cv2.merge(out_channels)
-
-logging.basicConfig(level=logging.DEBUG)
 cap = cv2.VideoCapture(-1)
 
 def get_red_mask(hsv_img):
@@ -78,6 +30,27 @@ def white_balance(img):
     result = cv2.cvtColor(result, cv2.COLOR_LAB2BGR)
     return result
 
+
+# frame may be passed only for painting contours
+def find_interesting_bound(mask, frame):
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if len(contours) != 0:
+        maxContour = max(contours, key = cv2.contourArea)
+        cv2.drawContours(frame, contours, -1, (0, 255, 0), 1)
+        cv2.drawContours(frame, [maxContour], -1,  (255, 0, 0), 2)
+        #x, y, w, h = cv2.boundingRect(maxContour)
+        return cv2.boundingRect(maxContour)
+    else:
+        return 0, 0, 0, 0
+
+def crop_img(img, x, y, w, h):
+    if w > 50 and h > 50:
+        topx = x+w
+        topy = y+h
+        cropped = frame[y:topy, x:topx]
+        cv2.imshow('crop', cropped)
+        return cropped
+
 while(True):
     ret, frame = cap.read()
     frame = white_balance(frame)
@@ -89,23 +62,18 @@ while(True):
     mask = get_red_mask(hsv)
     mask = noise_down(mask)
     result = cv2.bitwise_and(frame, frame, mask=mask)
-    contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    if len(contours) != 0:
-        maxContour = max(contours, key = cv2.contourArea)
-        x, y, w, h = cv2.boundingRect(maxContour)
-        if w > 50 and h > 50:
-            topx = x+w
-            topy = y+h
-            cropped = frame[y:topy, x:topx]
-            cv2.imshow('crop', cropped)        
-        cv2.drawContours(frame, contours, -1, (0, 255, 0), 1)
-        cv2.drawContours(frame, [maxContour], -1,  (255, 0, 0), 2)
-        cv2.rectangle(frame, (x,y), (x+w, y+h), (255, 128, 0), 2)
+
+    x, y, w, h = find_interesting_bound(mask, frame)
+    cropped_img = crop_img(frame, x, y, w, h)
+
+    cv2.rectangle(frame, (x,y), (x+w, y+h), (255, 128, 0), 2)
     cv2.imshow('in',frame)
     cv2.imshow('res', result)
+
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 cap.release()
 cv2.destroyAllWindows()
+
 
