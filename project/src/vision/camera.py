@@ -5,12 +5,13 @@ import numpy as np
 import logging 
 
 cap = cv2.VideoCapture(-1)
+#cap = cv2.VideoCapture('/home/art/out.ogv')
 
 # get red areas
 def get_red_mask(hsv_img):
     # note that is in [0-180] and s, v in [0, 255] 
-    mask1 = cv2.inRange(hsv_img, (0, 80, 40), (2, 255, 255))
-    mask2 = cv2.inRange(hsv_img, (170, 80, 40), (180, 255, 255))
+    mask1 = cv2.inRange(hsv_img, (0, 100, 70), (2, 255, 255))
+    mask2 = cv2.inRange(hsv_img, (170, 100, 70), (180, 255, 255))
     return mask1 + mask2 # and
 
 def noise_down(mask):
@@ -36,12 +37,10 @@ def find_interesting_bound(mask, frame):
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if len(contours) != 0:
         maxContour = max(contours, key = cv2.contourArea)
-        cv2.drawContours(frame, contours, -1, (0, 255, 0), 1)
-        cv2.drawContours(frame, [maxContour], -1,  (255, 0, 0), 2)
         #x, y, w, h = cv2.boundingRect(maxContour)
-        return cv2.boundingRect(maxContour)
+        return (cv2.boundingRect(maxContour), maxContour, contours)
     else:
-        return 0, 0, 0, 0
+        return ((0, 0, 0, 0), None, None)
 
 def crop(img, x, y, w, h):
     if w > 50 and h > 50:
@@ -49,6 +48,7 @@ def crop(img, x, y, w, h):
         topy = y+h
         cropped = frame[y:topy, x:topx]
         cropped = cv2.resize(cropped, (128, 128))
+
         return cropped
     else:
         return None
@@ -66,14 +66,18 @@ while(True):
     mask = noise_down(mask)
     result = cv2.bitwise_and(frame, frame, mask=mask)
 
-    x, y, w, h = find_interesting_bound(mask, frame)
+    (x, y, w, h), maxContour, contours = find_interesting_bound(mask, frame)
     cropped = crop(frame, x, y, w, h)
     if not cropped is None:
         cropped = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
         cv2.imshow('crop', cropped)
+        #cv2.imwrite('/home/art/robotVideo1/' + str(i) + '.jpeg', cropped)
+        cv2.rectangle(frame, (x,y), (x+w, y+h), (255, 128, 0), 2)
+        cv2.drawContours(frame, contours, -1, (0, 255, 0), 1)
+        cv2.drawContours(frame, [maxContour], -1,  (255, 0, 0), 2)
 
-    cv2.rectangle(frame, (x,y), (x+w, y+h), (255, 128, 0), 2)
     cv2.imshow('res', result)
+    
     cv2.imshow('in', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
