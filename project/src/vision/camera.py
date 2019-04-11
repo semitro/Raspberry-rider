@@ -55,9 +55,10 @@ class Eye:
     
     #### main func
     def get_red_area(self):
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            quit()
         ret, frame = self.cap.read()
         cv2.imshow('inda', frame)
-        cv2.waitKey()
         frame = self.white_balance(frame)
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     
