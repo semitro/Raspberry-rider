@@ -1,4 +1,4 @@
-from fsm import State, Fsm
+from fsm.fsm import State, Fsm
 import logging
 
 class GoingForward(State):
