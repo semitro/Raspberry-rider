@@ -1,14 +1,18 @@
 from fsm.fsm import State, Fsm
+from vision.camera import Eye
 import logging
 
+# Go and see if there is arrows
 class GoingForward(State):
 	def __init__(self):
 		self.time = 0
+		self.eye = Eye()
 		pass
 
 	def handle(self, fsm, delta_time):
 		# if obstacle
 		logging.debug("handle GoingForward state")
+		picture = self.eye.get_red_area()
 		self.time += delta_time
 		if(self.time > 30):
 			fsm.state = Turning(25)
