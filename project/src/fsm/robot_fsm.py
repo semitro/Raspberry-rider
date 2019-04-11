@@ -1,11 +1,13 @@
 from fsm.fsm import State, Fsm
 from vision.camera import Eye
+from hw.engine import *
 from keras import models
 from keras.preprocessing import image
 import numpy as np
 import logging
 
 eye = Eye()
+engine = Engine()
 circles_detector = models.load_model('neurals/circles.h5')
 arrow_classifier = models.load_model('neurals/arrows.h5')
 
@@ -20,6 +22,8 @@ class GoingForward(State):
 		picture = eye.get_red_area()
 		if picture is not None:
 			fsm.state = Thinking(picture)
+			return
+		engine.move_forward()
 
 # Think about the circles and the arrows, how the arrows go into the circles
 class Thinking(State):
@@ -28,6 +32,7 @@ class Thinking(State):
 	
 	def handle(self, fsm, delta_time):
 		logging.debug("handle Thinking state")
+		engine.stop()
 		if self.picture is None:
 			raise Error("ass")
 		pic_tensor = image.img_to_array(self.picture)
@@ -54,6 +59,10 @@ class Turning(State):
 
 	def handle(self, fsm, delta_time):
 		# if obstacle
+		if self.direction == 0:
+			engine.rot_left()
+		else:
+			engine.rot_right()
 		self.time_to_stop -= delta_time
 		if(self.time_to_stop < 0):
 			fsm.state = GoingForward()
