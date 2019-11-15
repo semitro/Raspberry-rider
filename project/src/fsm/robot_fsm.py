@@ -2,6 +2,7 @@ from fsm.fsm import State, Fsm
 from vision.camera import Eye
 from vision.classifier import *
 from vision.arrow_dsp_classifier import ArrowDspClassifier
+from vision.image_logger import image_logging
 
 from hw.engine import *
 
@@ -43,10 +44,12 @@ class Thinking(State):
         if arrow_type is None:
             fsm.state = GoingForward()
             logging.debug("No circle")
+            image_logging.log(self.picture, "None")
             return
 
         fsm.state = Turning(30, Direction.LEFT if arrow_type == Arrow.LEFT else Direction.RIGHT)
         logging.debug("handle Turning state, direction: " + str(arrow_type))
+        image_logging.log(self.picture, str(arrow_type))
 
 
 class Direction(Enum):
