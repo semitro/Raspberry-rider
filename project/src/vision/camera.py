@@ -40,9 +40,9 @@ class Eye:
         if len(contours) != 0:
             maxContour = max(contours, key=cv2.contourArea)
             # x, y, w, h = cv2.boundingRect(maxContour)
-            return (cv2.boundingRect(maxContour), maxContour, contours)
+            return cv2.boundingRect(maxContour), maxContour, contours
         else:
-            return ((0, 0, 0, 0), None, None)
+            return (0, 0, 0, 0), None, None
 
     def crop(self, img, x, y, w, h):
         if w > 50 and h > 50:
@@ -55,7 +55,7 @@ class Eye:
         else:
             return None
 
-    #### main func
+    # main func
     def get_red_area(self):
         # if cv2.waitKey(1) & 0xFF == ord('q'):
         #    quit()

@@ -1,15 +1,14 @@
 from fsm.fsm import State, Fsm
 from vision.camera import Eye
-from vision.recognition import *
+from vision.classifier import *
+from vision.arrow_dsp_classifier import ArrowDspClassifier
 
 from hw.engine import *
-from keras.preprocessing import image
-import numpy as np
+
 import logging
 
 eye = Eye()
 engine = Engine()
-arrowClassifier = ArrowCnnClassifier()
 
 
 # Go and see if there is arrows
@@ -29,6 +28,8 @@ class GoingForward(State):
 
 # Think about the circles and the arrows, how the arrows go into the circles
 class Thinking(State):
+    arrowClassifier = ArrowDspClassifier()
+
     def __init__(self, picture):
         self.picture = picture
 
@@ -37,12 +38,11 @@ class Thinking(State):
         engine.stop()
         if self.picture is None:
             raise Error("ass in hanlde thinking")
-        pic_tensor = image.img_to_array(self.picture)
-        pic_tensor /= 255.
-        pic_tensor = pic_tensor.reshape(128, 128)
-        arrow_type = arrowClassifier.classify(pic_tensor)
+
+        arrow_type = self.arrowClassifier.classify(self.picture)
         if arrow_type is None:
             fsm.state = GoingForward()
+            logging.debug("No circle")
             return
 
         fsm.state = Turning(30, Direction.LEFT if arrow_type == Arrow.LEFT else Direction.RIGHT)
