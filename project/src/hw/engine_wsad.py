@@ -1,5 +1,7 @@
 from enum import Enum
 
+from hw.abstract_engine import AbstractEngine
+
 
 class Power(Enum):
     ZERO = 0
@@ -13,7 +15,7 @@ class Power(Enum):
         return str(self.value)
 
 
-class Engine:
+class EngineWsad(AbstractEngine):
     def __init__(self):
         self.power = Power.AVG
 

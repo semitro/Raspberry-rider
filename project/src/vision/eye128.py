@@ -8,12 +8,16 @@ import logging
 class Eye:
     def __init__(self):
         self.cap = cv2.VideoCapture(-1)
+        self.i = 0 # delete me
+        self.l = 0
+        self.r = 0
+        self.s = 0 # shit
 
     # get red areas
     def get_red_mask(self, hsv_img):
         # note that is in [0-180] and s, v in [0, 255] 
-        mask1 = cv2.inRange(hsv_img, (0, 100, 70), (2, 255, 255))
-        mask2 = cv2.inRange(hsv_img, (170, 100, 70), (180, 255, 255))
+        mask1 = cv2.inRange(hsv_img, (0, 80, 60), (2, 255, 255))
+        mask2 = cv2.inRange(hsv_img, (170, 80, 60), (180, 255, 255))
         return mask1 + mask2  # and
 
     def noise_down(self, mask):
@@ -57,9 +61,8 @@ class Eye:
 
     # main func
     def get_red_area(self):
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #    quit()
         ret, frame = self.cap.read()
+
         # cv2.imshow('inda', frame)
         frame = self.white_balance(frame)
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -74,15 +77,32 @@ class Eye:
         (x, y, w, h), maxContour, contours = self.find_interesting_bound(mask, frame)
         cropped = self.crop(frame, x, y, w, h)
         logging.debug("got red area " + str(w) + "x" + str(h))
-        if not cropped is None:
+        if cropped is not None:
             cropped = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
-            # cv2.imshow('crop', cropped)
             # cv2.imwrite('/home/art/robotVideo1/' + str(i) + '.jpeg', cropped)
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 128, 0), 2)
             cv2.drawContours(frame, contours, -1, (0, 255, 0), 1)
             cv2.drawContours(frame, [maxContour], -1, (255, 0, 0), 2)
-            # cv2.imshow('res', result)
-            # cv2.imshow('in', frame)
+            cv2.imshow('in', frame)
+            cv2.imshow('res', cropped)
+
+            key = cv2.waitKey(0) # s == 115
+            if key == 108: # l
+                cv2.imwrite('./Dataset/left/' + str(self.l) + '.jpeg', cropped)
+                print("Saving left image #" + str(self.l))
+                self.l += 1
+
+            if key == 114: # r
+                cv2.imwrite('./Dataset/right/' + str(self.r) + '.jpeg', cropped)
+                print("Saving right image #" + str(self.r))
+                self.r += 1
+
+            if key == 102: # f (fuck)
+                cv2.imwrite('./Dataset/shit/' + str(self.s) + '.jpeg', cropped)
+                print("Saving shit image #" + str(self.s))
+                self.s += 1
+
+
             return cropped
         else:
             return None

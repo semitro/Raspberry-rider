@@ -1,16 +1,18 @@
 from fsm.fsm import State, Fsm
-from vision.camera import Eye
+from hw.engine_factory import EngineFactory
+from hw.engine_stub import EngineStub
+from vision.eye64 import Eye64
+from vision.eye128 import Eye
+
 from vision.classifier import *
 from vision.arrow_dsp_classifier import ArrowDspClassifier
 from vision.image_logger import image_logging
 
-from hw.engine import *
+from hw.engine_wsad import *
 
 import logging
 
 eye = Eye()
-engine = Engine()
-
 
 # Go and see if there is arrows
 class GoingForward(State):
@@ -20,11 +22,11 @@ class GoingForward(State):
     def handle(self, fsm, delta_time):
         # if obstacle
         logging.debug("handle GoingForward state")
-        picture = eye.get_red_area()
+        picture = eye.read()
         if picture is not None:
             fsm.state = Thinking(picture)
             return
-        engine.move_forward()
+        fsm.engine.move_forward()
 
 
 # Think about the circles and the arrows, how the arrows go into the circles
@@ -36,7 +38,7 @@ class Thinking(State):
 
     def handle(self, fsm, delta_time):
         logging.debug("handle Thinking state")
-        engine.stop()
+        fsm.engine.stop()
         if self.picture is None:
             raise Error("ass in hanlde thinking")
 
@@ -69,9 +71,9 @@ class Turning(State):
     def handle(self, fsm, delta_time):
         # if obstacle
         if self.direction == Direction.LEFT:
-            engine.rot_left()
+            fsm.engine.rot_left()
         else:
-            engine.rot_right()
+            fsm.engine.rot_right()
         self.time_to_stop -= delta_time
         if self.time_to_stop < 0:
             fsm.state = GoingForward()
@@ -80,3 +82,4 @@ class Turning(State):
 class RobotFsm(Fsm):
     def __init__(self):
         Fsm.__init__(self, GoingForward())
+        self.engine = EngineFactory.create_engine()
