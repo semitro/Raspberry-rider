@@ -4,16 +4,13 @@ import sys
 import numpy as np
 import logging
 from vision.image_source import ImageSource
-from vision.image_logger import  image_display
+from vision.image_logger import image_display
+from vision.image_logger import interactive_dataset_creator
 
 class Eye(ImageSource):
     def __init__(self):
         super().__init__()
         self.cap = cv2.VideoCapture(-1)
-        self.i = 0 # delete me
-        self.l = 0
-        self.r = 0
-        self.s = 0 # shit
 
     # get red areas
     def get_red_mask(self, hsv_img):
@@ -89,21 +86,7 @@ class Eye(ImageSource):
             image_display.show(frame, 'in')
             image_display.show(cropped, 'cropped')
             key = image_display.wait_key()
-            if key == 108: # l
-                cv2.imwrite('./Dataset/left/' + str(self.l) + '.jpeg', cropped)
-                print("Saving left image #" + str(self.l))
-                self.l += 1
-
-            if key == 114: # r
-                cv2.imwrite('./Dataset/right/' + str(self.r) + '.jpeg', cropped)
-                print("Saving right image #" + str(self.r))
-                self.r += 1
-
-            if key == 102: # f (fuck)
-                cv2.imwrite('./Dataset/shit/' + str(self.s) + '.jpeg', cropped)
-                print("Saving shit image #" + str(self.s))
-                self.s += 1
-
+            interactive_dataset_creator.process(key, cropped)
 
             return cropped
         else:
