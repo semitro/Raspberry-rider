@@ -3,10 +3,12 @@ import math
 import sys
 import numpy as np
 import logging
+from vision.image_source import ImageSource
+from vision.image_logger import  image_display
 
-
-class Eye:
+class Eye(ImageSource):
     def __init__(self):
+        super().__init__()
         self.cap = cv2.VideoCapture(-1)
         self.i = 0 # delete me
         self.l = 0
@@ -60,7 +62,7 @@ class Eye:
             return None
 
     # main func
-    def get_red_area(self):
+    def read(self):
         ret, frame = self.cap.read()
 
         # cv2.imshow('inda', frame)
@@ -83,10 +85,10 @@ class Eye:
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 128, 0), 2)
             cv2.drawContours(frame, contours, -1, (0, 255, 0), 1)
             cv2.drawContours(frame, [maxContour], -1, (255, 0, 0), 2)
-            cv2.imshow('in', frame)
-            cv2.imshow('res', cropped)
 
-            key = cv2.waitKey(0) # s == 115
+            image_display.show(frame, 'in')
+            image_display.show(cropped, 'cropped')
+            key = image_display.wait_key()
             if key == 108: # l
                 cv2.imwrite('./Dataset/left/' + str(self.l) + '.jpeg', cropped)
                 print("Saving left image #" + str(self.l))

@@ -37,6 +37,7 @@ class DspUtil:
         kernel = np.array([[1], [-1]])
         return cv.filter2D(img, -1, kernel)
 
+    # TODO: improve arrows features. It doesn't work for rotated images
     @staticmethod
     def erase_negative_lines(img):
         kernel = np.array([[1, 0], [0, -1]])
@@ -104,7 +105,6 @@ class ArrowDspClassifier(Classifier):
 
         # let's keep only arrow's oblique lines feature
         img = DspUtil.convolve_straight_lines(img)
-
         # clear lines kx + b where k < 0
         img_positive = DspUtil.erase_negative_lines(img)
         img_negative = DspUtil.erase_positive_lines(img)

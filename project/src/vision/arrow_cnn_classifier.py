@@ -18,10 +18,8 @@ class ArrowCnnClassifier(Classifier):
         pic_tensor128 = np.expand_dims(pic_tensor128, axis=0)
         pic_tensor128 = np.stack([pic_tensor128, pic_tensor128, pic_tensor128], axis=3)
         its_useful_area = self._circles_detector.predict_classes(pic_tensor128)
-        print("Circle: " + str(its_useful_area[0][0] == 0))
-        if its_useful_area == [[1]]:
-            #  fsm.state = GoingForward()
-            return None
+        print("Circle classified: " + str(its_useful_area[0][0] == 0))
+        if its_useful_area == [[1]]: return None
         its_arrow = self._arrow_classifier.predict_classes(pic_tensor128)
         direction = its_arrow[0][0]
         print("Left arrow: " + str(direction == 0))
