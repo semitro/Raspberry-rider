@@ -1,18 +1,16 @@
 from fsm.fsm import State, Fsm
 from hw.engine_factory import EngineFactory
-from hw.engine_stub import EngineStub
-from vision.eye64 import Eye64
-from vision.eye128 import Eye
 
 from vision.classifier import *
-from vision.arrow_dsp_classifier import ArrowDspClassifier
+from vision.arrow_cnn_classifier import ArrowCnnClassifier
 from vision.image_logger import image_logging
-
+from vision.eye_red import EyeRed
 from hw.engine_wsad import *
 
 import logging
 
-eye = Eye()
+eye = EyeRed()
+
 
 # Go and see if there is arrows
 class GoingForward(State):
@@ -31,7 +29,7 @@ class GoingForward(State):
 
 # Think about the circles and the arrows, how the arrows go into the circles
 class Thinking(State):
-    arrowClassifier = ArrowDspClassifier()
+    arrowClassifier = ArrowCnnClassifier()
 
     def __init__(self, picture):
         self.picture = picture
@@ -41,7 +39,6 @@ class Thinking(State):
         fsm.engine.stop()
         if self.picture is None:
             raise Error("ass in hanlde thinking")
-
         arrow_type = self.arrowClassifier.classify(self.picture)
         if arrow_type is None:
             fsm.state = GoingForward()

@@ -6,7 +6,7 @@ from vision.image_logger import image_logging
 from vision.image_logger import image_display
 from vision.image_logger import interactive_dataset_creator
 
-logging.basicConfig(level=logging.CRITICAL)
+logging.basicConfig(level=logging.DEBUG)
 image_logging.set_dir_path("../img_out")
 image_logging.set_state(image_logging.State.OFF)
 image_display.set_state(image_display.state.ON)
